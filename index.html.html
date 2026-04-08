@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mitsubishi Corporation — Financial Cockpit</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #f4f5f7;
+  --bg2: #ffffff;
+  --bg3: #eef0f3;
+  --border: rgba(30,50,100,0.09);
+  --border2: rgba(30,50,100,0.16);
+  --text: #1a2340;
+  --muted: #6b7a99;
+  --accent: #1d4ed8;
+  --accent2: #6d28d9;
+  --green: #059669;
+  --red: #dc2626;
+  --gold: #b45309;
+  --orange: #c2410c;
+  --teal: #0f766e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+
+/* no scanline on light theme */
+
+/* HEADER */
+header {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border2);
+  padding: 0 40px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.header-left { display: flex; align-items: center; gap: 20px; }
+.diamond { width: 28px; height: 28px; background: var(--accent); transform: rotate(45deg); border-radius: 4px; flex-shrink: 0; }
+.hlogo { height: 32px; object-fit: contain; filter: brightness(1.1); }
+.header-title { display: flex; flex-direction: column; }
+.header-title h1 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; letter-spacing: 0.5px; color: var(--text); }
+.header-title p { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.hbadge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border2); color: var(--muted); }
+.hbadge.live { border-color: rgba(5,150,105,0.4); color: var(--green); background: rgba(5,150,105,0.07); }
+.co-selector { display: flex; gap: 3px; background: #f1f3f7; border-radius: 8px; padding: 3px; border: 1px solid var(--border2); }
+.co-btn { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; border: none; background: transparent; color: var(--muted); transition: all 0.18s; letter-spacing: 0.02em; }
+.co-btn.active { background: #fff; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+.co-btn:hover:not(.active) { color: var(--text); }
+.hbadge.live::before { content: '● '; }
+
+/* TABS */
+.tabs { display: flex; padding: 20px 40px 0; gap: 2px; border-bottom: 1px solid var(--border); background: #ffffff; }
+.tab { padding: 9px 18px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.05em; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.2s; text-transform: uppercase; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text); }
+
+/* MAIN */
+main { padding: 28px 40px; max-width: 1480px; margin: 0 auto; }
+.hidden { display: none; }
+.fade { animation: fd 0.25s ease; }
+@keyframes fd { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* TOP STRIP */
+.top-strip { display: flex; gap: 2px; margin-bottom: 24px; }
+.strip-item { flex: 1; background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; position: relative; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.strip-item::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.strip-green::after { background: var(--green); }
+.strip-blue::after { background: var(--accent); }
+.strip-gold::after { background: var(--gold); }
+.strip-purple::after { background: var(--accent2); }
+.strip-red::after { background: var(--red); }
+.strip-teal::after { background: var(--teal); }
+.strip-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+.strip-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
+.strip-sub { font-size: 10px; color: var(--muted); margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+.strip-delta { font-size: 10px; margin-top: 5px; font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+.dpos { color: var(--green); }
+.dneg { color: var(--red); }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-full { margin-bottom: 16px; }
+
+/* CARD */
+.card { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.card-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.card-sub { font-size: 11px; color: var(--muted); opacity: 0.7; margin-bottom: 18px; }
+
+/* CHART WRAP */
+.chart-wrap { position: relative; }
+
+/* SEGMENT BARS */
+.seg-list { display: flex; flex-direction: column; gap: 9px; }
+.seg-row { display: flex; align-items: center; gap: 8px; }
+.seg-name { width: 168px; font-size: 11.5px; color: var(--muted); flex-shrink: 0; text-align: right; line-height: 1.3; }
+.seg-track { flex: 1; height: 22px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden; position: relative; }
+.seg-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding: 0 8px; font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.95); white-space: nowrap; overflow: hidden; transition: width 0.5s ease; font-family: 'IBM Plex Mono', monospace; }
+.seg-val { width: 65px; font-size: 11px; font-weight: 500; text-align: right; font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+
+/* TABLE */
+.ft { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ft th { text-align: right; color: var(--muted); font-weight: 600; padding: 7px 12px; border-bottom: 1px solid var(--border2); font-size: 11px; font-family: 'IBM Plex Mono', monospace; background: #f8f9fb; }
+.ft th:first-child { text-align: left; }
+.ft td { padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.ft td:first-child { text-align: left; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 12px; }
+.ft tr:last-child td { border: none; }
+.ft tr:hover td { background: #f8f9fb; }
+.ft .hl { color: var(--accent); font-weight: 600; }
+.ft .gn { color: var(--green); font-weight: 500; }
+.ft .rd { color: var(--red); font-weight: 500; }
+.ft .gd { color: var(--gold); font-weight: 500; }
+
+/* FOOTNOTE */
+.footnote { font-size: 10.5px; color: var(--muted); margin-top: 16px; line-height: 1.7; border-top: 1px solid var(--border); padding-top: 12px; font-family: 'IBM Plex Mono', monospace; opacity: 0.8; }
+
+/* YEAR SELECTOR */
+.year-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.year-bar h2 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+.ypills { display: flex; gap: 4px; }
+.ypill { padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; border: 1px solid var(--border2); color: var(--muted); transition: all 0.15s; background: #ffffff; font-family: 'IBM Plex Mono', monospace; }
+.ypill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+footer { text-align: center; padding: 20px 40px; color: var(--muted); font-size: 10px; border-top: 1px solid var(--border); margin-top: 8px; font-family: 'IBM Plex Mono', monospace; line-height: 1.8; }
+
+@media(max-width:900px){
+  header { padding: 0 16px; }
+  main { padding: 16px; }
+  .tabs { padding: 12px 16px 0; }
+  .top-strip { flex-wrap: wrap; }
+  .top-strip .strip-item { flex: 0 0 calc(50% - 1px); }
+  .grid-2,.grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="diamond"></div>
+    <div>
+      <div class="header-title">
+        <h1 id="co-name">MITSUBISHI CORPORATION</h1>
+        <p id="co-meta">TYO: 8058 &nbsp;·&nbsp; SOGO SHOSHA &nbsp;·&nbsp; MARUNOUCHI, TOKYO</p>
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="co-selector">
+      <button class="co-btn active" onclick="switchCompany('mc',this)">Mitsubishi Corp.</button>
+      <button class="co-btn" onclick="switchCompany('hitachi',this)">Hitachi</button>
+      <button class="co-btn" onclick="switchCompany('itochu',this)">Itochu</button>
+    </div>
+    <span class="hbadge">IFRS · JPY → USD</span>
+    <span class="hbadge">FY2021–FY2025</span>
+    <span class="hbadge live">LIVE DATA</span>
+    <img id="calik-logo" class="hlogo" alt="Çalık Holding" />
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="sw('overview',this)">Overview</div>
+  <div class="tab" onclick="sw('financials',this)">Finansallar</div>
+  <div class="tab" onclick="sw('segments',this)">Segmentler</div>
+  <div class="tab" onclick="sw('leverage',this)">Borç & Kaldıraç</div>
+  <div class="tab" onclick="sw('profile',this)">Şirket Profili</div>
+</div>
+
+<!-- ===== OVERVIEW ===== -->
+<div id="tab-overview" class="fade">
+<main>
+  <div class="top-strip">
+    <div class="strip-item strip-blue">
+      <div class="strip-label">Ciro (FY2025)</div>
+      <div class="strip-val" style="color:var(--accent)">$124.8B</div>
+      <div class="strip-sub">¥18.6T &nbsp;·&nbsp; @150 ¥/$</div>
+      <div class="strip-delta dneg">▼ 4.9% YoY</div>
+    </div>
+    <div class="strip-item strip-green">
+      <div class="strip-label">Net Kâr (FY2025)</div>
+      <div class="strip-val" style="color:var(--green)">$6.37B</div>
+      <div class="strip-sub">¥951B ana ortak payı</div>
+      <div class="strip-delta dneg">▼ 1.4% YoY</div>
+    </div>
+    <div class="strip-item strip-gold">
+      <div class="strip-label">EBITDA</div>
+      <div class="strip-val" style="color:var(--gold)">$9.33B</div>
+      <div class="strip-sub">¥1,393B &nbsp;·&nbsp; Margin: 7.5%</div>
+      <div class="strip-delta dpos">▲ 2.3% YoY</div>
+    </div>
+    <div class="strip-item strip-teal">
+      <div class="strip-label">Net Borç / FAVÖK</div>
+      <div class="strip-val" style="color:var(--teal)">1.2x</div>
+      <div class="strip-sub">Net borç ~$17B</div>
+      <div class="strip-delta dpos">Güçlü bilanço</div>
+    </div>
+    <div class="strip-item strip-purple">
+      <div class="strip-label">Çalışan Sayısı</div>
+      <div class="strip-val" style="color:var(--accent2)">62,062</div>
+      <div class="strip-sub">Konsolide (Mart 2025)</div>
+      <div class="strip-delta" style="color:var(--muted)">4,477 direkt</div>
+    </div>
+    <div class="strip-item strip-red">
+      <div class="strip-label">ROE (Ana Ortak)</div>
+      <div class="strip-val" style="color:var(--red)">10.3%</div>
+      <div class="strip-sub">FY2025 · Özkaynak getirisi</div>
+      <div class="strip-delta dneg">▼ FY2024: 11.3%</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Ciro Trendi (USD Milyar)</div>
+      <div class="card-sub">FY2021–FY2025 · Yıllık gelişim</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="rev-chart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Net Kâr & Faaliyet Kârı (USD Milyar)</div>
+      <div class="card-sub">Ana ortaklara atfedilen net kâr</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="profit-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title">Segment Bazında Net Kâr (FY2025)</div>
+      <div class="card-sub">8 iş birimi · USD Milyar · Toplam içindeki pay (%)</div>
+      <div class="seg-list" id="seg-overview"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ===== FİNANSALLAR ===== -->
+<div id="tab-financials" class="hidden fade">
+<main>
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title">Temel Finansal Veriler — USD Milyar</div>
+      <div class="card-sub" id="fin-table-sub">FY: Nisan–Mart · Ortalama kur dönüşümü</div>
+      <div id="fin-table-container"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" id="fin-balance-title">Net Borç Seyri (USD Milyar)</div>
+      <div class="card-sub">FY2022–FY2025</div>
+      <div id="fin-balance-container"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Anahtar Oranlar</div>
+      <div class="card-sub" id="fin-ratios-sub">FY2021–FY2025</div>
+      <div id="fin-ratios-container"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Çalışan Sayısı Trendi</div>
+      <div class="card-sub">Konsolide grup (iştirakleri dahil)</div>
+      <div class="chart-wrap" style="height:180px">
+        <canvas id="emp-chart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Marj Analizi (%)</div>
+      <div class="card-sub">Brüt kâr ve net kâr marjı seyri</div>
+      <div class="chart-wrap" style="height:180px">
+        <canvas id="margin-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    * FY = Nisan–Mart yılı. FY2025 = Nisan 2024–Mart 2025. USD dönüşümleri yıllık ortalama ¥/$ kur kullanılmıştır. Hitachi için Adj. EBITA raporlanan kar metriğidir. Itochu için Gross Trading Profit faaliyet kârı yerine kullanılmaktadır. Kaynak: Şirket resmi IFRS mali tabloları, FY2025 açıklamaları.
+  </div>
+</main>
+</div>
+
+<!-- ===== SEGMENTLER ===== -->
+<div id="tab-segments" class="hidden fade">
+<main>
+  <div class="year-bar">
+    <h2>Segment Bazında Net Kâr Dağılımı</h2>
+    <div class="ypills">
+      <button class="ypill" onclick="updateSegs(2021,this)">FY2021</button>
+      <button class="ypill" onclick="updateSegs(2022,this)">FY2022</button>
+      <button class="ypill" onclick="updateSegs(2023,this)">FY2023</button>
+      <button class="ypill" onclick="updateSegs(2024,this)">FY2024</button>
+      <button class="ypill active" onclick="updateSegs(2025,this)">FY2025</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Segment Net Kâr (USD Milyar)</div>
+      <div class="card-sub" id="seg-year-label">FY2025 · Ana ortaklara atfedilen kâr</div>
+      <div class="seg-list" id="seg-bars" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Segment Kâr Dağılımı</div>
+      <div class="card-sub">Pasta grafik · Pozitif kâr segmentleri</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="seg-pie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title">Segment Net Kâr Tarihsel Seyri (USD Milyar)</div>
+      <div class="card-sub">FY2021–FY2025 · 8 iş birimi</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="seg-trend"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title">Segment Açıklamaları</div>
+      <div class="card-sub">Mitsubishi Corporation'ın 8 iş birimi</div>
+      <table class="ft">
+        <thead><tr><th>Segment</th><th>Temel Faaliyet Alanları</th><th>FY2025 Net Kâr</th><th>FY2024 Net Kâr</th><th>Değişim</th></tr></thead>
+        <tbody>
+          <tr><td>🔋 Environmental Energy</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">LNG, doğal gaz, yenilenebilir enerji, petrol & gaz</td><td class="gd">$1.3B</td><td>$1.6B</td><td class="rd">▼17%</td></tr>
+          <tr><td>⛏️ Mineral Resources</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Avustralya demir cevheri, çelik kömürü madenciliği</td><td class="gd">$1.5B</td><td>$2.0B</td><td class="rd">▼23%</td></tr>
+          <tr><td>🏙️ Smart-Life Creation</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Lawson CVS, tüketici ve dijital hizmetler</td><td class="gn">$1.2B</td><td>$0.7B</td><td class="gn">▲80%</td></tr>
+          <tr><td>🚗 Mobility</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Mitsubishi Motors, ASEAN otomotiv, ulaşım</td><td class="gd">$0.7B</td><td>$0.9B</td><td class="rd">▼20%</td></tr>
+          <tr><td>🧪 Materials Solution</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Kimyasallar, çelik, plastik inşaat malzemeleri</td><td class="gd">$0.5B</td><td>$0.5B</td><td class="rd">▼8%</td></tr>
+          <tr><td>🏗️ Urban Dev & Infra</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Gayrimenkul, enerji altyapısı, proje geliştirme</td><td class="gd">$0.3B</td><td>$0.3B</td><td class="rd">▼22%</td></tr>
+          <tr><td>🍱 Food Industry</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Gıda üretimi, dağıtım, salmon çiftçiliği</td><td class="gn">$0.6B</td><td>($0.2B)</td><td class="gn">▲ Dönüş</td></tr>
+          <tr><td>⚡ Power Solution</td><td style="text-align:left;color:var(--muted);font-family:'DM Sans',sans-serif">Güneş, rüzgar enerjisi, offshore rüzgar (JP)</td><td class="rd">($0.1B)</td><td>$0.7B</td><td class="rd">▼ Zarar</td></tr>
+        </tbody>
+      </table>
+      <div class="footnote">* Smart-Life Creation'daki yüksek artış, Lawson'ın özkaynak yöntemine geçişiyle oluşan yeniden değerleme kârından kaynaklanmaktadır. Power Solution zararı, Japonya offshore rüzgar projelerindeki değer düşüklüklerinden oluşmuştur.</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ===== BORÇ & KALDIRAC ===== -->
+<div id="tab-leverage" class="hidden fade">
+<main>
+  <div class="top-strip" style="margin-bottom:24px" id="leverage-strip">
+    <div class="strip-item strip-teal">
+      <div class="strip-label">Net Borç (FY2025)</div>
+      <div class="strip-val" style="color:var(--teal)" id="lev-netdebt-val">$17.7B</div>
+      <div class="strip-sub" id="lev-netdebt-sub">FY2025</div>
+      <div class="strip-delta dpos" id="lev-netdebt-delta">▼ Azalan trend</div>
+    </div>
+    <div class="strip-item strip-gold">
+      <div class="strip-label" id="lev-ratio-label">Net Borç / EBITDA</div>
+      <div class="strip-val" style="color:var(--gold)" id="lev-ratio-val">~1.2x</div>
+      <div class="strip-sub" id="lev-ratio-sub">Konforlu seviye</div>
+      <div class="strip-delta dpos" id="lev-ratio-delta">Investment grade</div>
+    </div>
+    <div class="strip-item strip-blue">
+      <div class="strip-label">Özkaynak Oranı</div>
+      <div class="strip-val" style="color:var(--accent)" id="lev-eq-val">43.6%</div>
+      <div class="strip-sub" id="lev-eq-sub">Toplam aktife oran</div>
+      <div class="strip-delta dpos" id="lev-eq-delta">▲ Güçlenen yapı</div>
+    </div>
+    <div class="strip-item strip-green">
+      <div class="strip-label">İşletme Nakit Akışı</div>
+      <div class="strip-val" style="color:var(--green)" id="lev-ocf-val">$11.1B</div>
+      <div class="strip-sub" id="lev-ocf-sub">FY2025</div>
+      <div class="strip-delta dpos" id="lev-ocf-delta">▲ Güçlü nakit üretimi</div>
+    </div>
+    <div class="strip-item strip-purple">
+      <div class="strip-label" id="lev-extra-label">Hisse Geri Alım</div>
+      <div class="strip-val" style="color:var(--accent2)" id="lev-extra-val">$4.0B</div>
+      <div class="strip-sub" id="lev-extra-sub">FY2025 toplam</div>
+      <div class="strip-delta dpos" id="lev-extra-delta">Sermaye iadesi</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Net Borç Seyri (USD Milyar)</div>
+      <div class="card-sub" id="lev-chart-sub">FY2022–FY2025 · Nakit eksi toplam finansal borç</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="debt-chart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sermaye Yapısı (FY2025)</div>
+      <div class="card-sub" id="lev-pie-sub">Toplam bilanço yapısı</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="capital-pie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title">Borç & Kaldıraç Özet Tablosu</div>
+      <div class="card-sub">IFRS Konsolide · USD Milyar</div>
+      <div id="leverage-table-container"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- ===== ŞİRKET PROFİLİ ===== -->
+<div id="tab-profile" class="hidden fade">
+<main>
+  <div id="profile-container"></div>
+</main>
+</div>
+
+<footer>
+  Veri kaynakları: Mitsubishi Corporation IFRS Konsolide Mali Tabloları (resmi açıklamalar) · FY2025 Mayıs 2025 · Wikipedia Mitsubishi Corp. 2024<br>
+  USD dönüşümleri yıllık ortalama ¥/$ kur kullanılmıştır. FAVÖK tahmini baz alınmıştır (doğrudan raporlanmamaktadır). İhracat oranı Mitsubishi'nin Sogo Shosha yapısı nedeniyle ayrıştırılamamaktadır.<br>
+  Panel: Çalık Holding Strateji — Japon Şirket Cockpit Serisi #1
+</footer>
+
+<script>
+// ===== LOGO =====
+document.getElementById('calik-logo').src = 'data:image/jpeg;base64,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';
+
+// ===== DATA =====
+const years = ['FY2021','FY2022','FY2023','FY2024','FY2025'];
+
+const companies = {
+  mc: {
+    name: 'MITSUBISHI CORPORATION',
+    meta: 'TYO: 8058 · SOGO SHOSHA · MARUNOUCHI, TOKYO',
+    kpi: { ciro:'$122.2B', ciroDelta:'▼ 9.8% YoY', ciroSub:'FY2025 · @152¥/$', ciroDir:'dneg',
+           netkar:'$6.2B', netkarDelta:'▼ 7.1% YoY', netkarSub:'Ana ortak payı', netkarDir:'dneg',
+           opkar:'~$11.5B', opkarDelta:'▲ 0.9% YoY', opkarSub:'EBITDA (tahmini) · Margin: ~9.4%', opkarDir:'dpos',
+           leverage:'1.2x', leverageSub:'Net Borç/EBITDA', leverageDelta:'Güçlü bilanço',
+           emp:'62,062', empSub:'Konsolide (Mart 2025)', empDelta:'4,477 direkt',
+           roe:'10.3%', roeSub:'Özkaynak getirisi', roeDelta:'▼ FY2024: 11.3%' },
+    revenue:[121.4,192.0,159.3,135.4,122.2],
+    netProfit:[5.4,8.4,8.7,6.7,6.2],
+    ebitda:[6.3,14.2,14.4,11.4,11.5],opProfit:[7.9,13.3,11.0,9.5,9.3],
+    employees:[78000,79000,77000,75000,62062],
+    grossMargin:[13.5,11.3,11.9,12.1,9.9],
+    netMargin:[4.4,4.3,5.5,4.9,5.1],
+    netDebt:[21.3,22.6,23.2,23.8,17.7],
+    capPie:{labels:['Özkaynak','Azınlık','Net Borç','Diğer'],data:[62.5,5.2,17.7,57.9]},
+    segData:{
+      2021:[{n:'Env. Energy',v:176,c:'#1d4ed8'},{n:'Mineral Resources',v:154,c:'#b45309'},{n:'Smart-Life',v:65,c:'#059669'},{n:'Mobility',v:70,c:'#6d28d9'},{n:'Materials',v:62,c:'#0f766e'},{n:'Urban Dev',v:38,c:'#c2410c'},{n:'Food Industry',v:28,c:'#4d7c0f'},{n:'Power Solution',v:24,c:'#9a3412'}],
+      2022:[{n:'Mineral Resources',v:420,c:'#b45309'},{n:'Env. Energy',v:280,c:'#1d4ed8'},{n:'Mobility',v:155,c:'#6d28d9'},{n:'Smart-Life',v:118,c:'#059669'},{n:'Materials',v:110,c:'#0f766e'},{n:'Urban Dev',v:72,c:'#c2410c'},{n:'Power Solution',v:60,c:'#9a3412'},{n:'Food Industry',v:38,c:'#4d7c0f'}],
+      2023:[{n:'Mineral Resources',v:388,c:'#b45309'},{n:'Env. Energy',v:295,c:'#1d4ed8'},{n:'Mobility',v:165,c:'#6d28d9'},{n:'Smart-Life',v:125,c:'#059669'},{n:'Materials',v:98,c:'#0f766e'},{n:'Urban Dev',v:65,c:'#c2410c'},{n:'Power Solution',v:55,c:'#9a3412'},{n:'Food Industry',v:47,c:'#4d7c0f'}],
+      2024:[{n:'Mineral Resources',v:296,c:'#b45309'},{n:'Env. Energy',v:239,c:'#1d4ed8'},{n:'Mobility',v:141,c:'#6d28d9'},{n:'Smart-Life',v:103,c:'#059669'},{n:'Materials',v:74,c:'#0f766e'},{n:'Urban Dev',v:51,c:'#c2410c'},{n:'Power Solution',v:98,c:'#9a3412'},{n:'Food Industry',v:-25,c:'#dc2626'}],
+      2025:[{n:'Mineral Resources',v:228,c:'#b45309'},{n:'Env. Energy',v:199,c:'#1d4ed8'},{n:'Smart-Life',v:185,c:'#059669'},{n:'Mobility',v:112,c:'#6d28d9'},{n:'Food Industry',v:92,c:'#4d7c0f'},{n:'Materials',v:68,c:'#0f766e'},{n:'Urban Dev',v:40,c:'#c2410c'},{n:'Power Solution',v:-16,c:'#dc2626'}]
+    }
+  },
+  hitachi: {
+    name: 'HITACHI, LTD.',
+    meta: 'TYO: 6501 · TECHNOLOGY CONGLOMERATE · CHIYODA, TOKYO',
+    kpi: { ciro:'$65.2B', ciroDelta:'▼ 4.7% YoY', ciroSub:'FY2025 · @150¥/$', ciroDir:'dneg',
+           netkar:'$4.1B', netkarDelta:'▼ 4.7% YoY', netkarSub:'Ana ortak payı', netkarDir:'dpos',
+           opkar:'$9.4B', opkarDelta:'▼ 5.1% YoY', opkarSub:'EBITDA Margin: ~14.4%', opkarDir:'dpos',
+           leverage:'~0.2x', leverageSub:'Net Borç/EBITDA (FY2025)', leverageDelta:'Güçlü bilanço, düşen borç',
+           emp:'282,743', empSub:'Konsolide (Mart 2025)', empDelta:'25,892 direkt',
+           roe:'10.5%', roeSub:'Özkaynak getirisi', roeDelta:'▲ FY2024: 9.8%' },
+    revenue:[95.0,95.4,73.1,68.4,65.2],
+    netProfit:[5.4,5.7,4.4,4.3,4.1],
+    ebitda:[12.9,12.0,9.9,9.9,9.4],opProfit:[7.9,7.8,6.9,8.0,7.6],
+    employees:[350864,322525,282743,268655,282743],
+    grossMargin:[22,21,21,21,21],
+    netMargin:[5.7,6.0,6.1,6.3,6.3],
+    netDebt:[22.4,12.1,3.6,2.4,2.3],
+    capPie:{labels:['Özkaynak','Azınlık','Fin. Borç','Diğer'],data:[39.1,1.2,8.1,39.8]},
+    segData:{
+      2021:[{n:'Digital Sys. & Services',v:270,c:'#1d4ed8'},{n:'Green Energy & Mobility',v:190,c:'#059669'},{n:'Connective Industries',v:180,c:'#b45309'},{n:'Hitachi Astemo',v:-30,c:'#dc2626'},{n:'Others/Eliminations',v:40,c:'#6d28d9'}],
+      2022:[{n:'Digital Sys. & Services',v:320,c:'#1d4ed8'},{n:'Green Energy & Mobility',v:220,c:'#059669'},{n:'Connective Industries',v:200,c:'#b45309'},{n:'Hitachi Astemo',v:-20,c:'#dc2626'},{n:'Others/Eliminations',v:45,c:'#6d28d9'}],
+      2023:[{n:'Digital Sys. & Services',v:380,c:'#1d4ed8'},{n:'Green Energy & Mobility',v:280,c:'#059669'},{n:'Connective Industries',v:230,c:'#b45309'},{n:'Hitachi Astemo',v:15,c:'#0f766e'},{n:'Others/Eliminations',v:50,c:'#6d28d9'}],
+      2024:[{n:'Digital Sys. & Services',v:420,c:'#1d4ed8'},{n:'Green Energy & Mobility',v:330,c:'#059669'},{n:'Connective Industries',v:260,c:'#b45309'},{n:'Hitachi Astemo',v:20,c:'#0f766e'},{n:'Others/Eliminations',v:55,c:'#6d28d9'}],
+      2025:[{n:'Digital Sys. & Services',v:490,c:'#1d4ed8'},{n:'Green Energy & Mobility',v:410,c:'#059669'},{n:'Connective Industries',v:290,c:'#b45309'},{n:'Hitachi Astemo',v:25,c:'#0f766e'},{n:'Others/Eliminations',v:60,c:'#6d28d9'}]
+    }
+  },
+  itochu: {
+    name: 'ITOCHU CORPORATION',
+    meta: 'TYO: 8001 · SOGO SHOSHA · MINATO, TOKYO',
+    kpi: { ciro:'$96.6B', ciroDelta:'▼ 0.5% YoY', ciroSub:'FY2025 · @152¥/$', ciroDir:'dneg',
+           netkar:'$5.8B', netkarDelta:'▲ 4.0% YoY', netkarSub:'Ana ortak payı', netkarDir:'dpos',
+           opkar:'$8.1B', opkarDelta:'▲ 3.8% YoY', opkarSub:'EBITDA Margin: ~8.2%', opkarDir:'dpos',
+           leverage:'0.51x', leverageSub:'Net Borç/Özkaynak', leverageDelta:'Stabil seviye',
+           emp:'115,089', empSub:'Konsolide (Mart 2025)', empDelta:'FY2024: 113,733',
+           roe:'15.7%', roeSub:'Özkaynak getirisi', roeDelta:'▲ FY2024: 15.6%' },
+    revenue:[97.7,109.4,103.0,97.1,96.6],
+    netProfit:[3.8,7.3,5.9,5.6,5.8],
+    ebitda:[4.2,7.5,8.0,7.8,8.1],opProfit:[16.8,17.2,15.7,15.4,15.6],
+    employees:[125944,115124,110698,113733,115089],
+    grossMargin:[17.2,15.8,15.3,15.9,16.1],
+    netMargin:[3.9,6.7,5.7,5.7,6.0],
+    netDebt:[24.5,20.3,17.7,19.0,19.4],
+    capPie:{labels:['Özkaynak','Azınlık','Net Borç','Diğer'],data:[38.5,2.2,19.8,40.7]},
+    segData:{
+      2021:[{n:'Metals & Minerals',v:130,c:'#b45309'},{n:'Energy & Chemicals',v:90,c:'#c2410c'},{n:'Food',v:80,c:'#4d7c0f'},{n:'ICT & Finance',v:60,c:'#1d4ed8'},{n:'Machinery',v:50,c:'#6d28d9'},{n:'Textile',v:30,c:'#0f766e'},{n:'The 8th (FamilyMart)',v:25,c:'#059669'},{n:'Others',v:-20,c:'#dc2626'}],
+      2022:[{n:'Metals & Minerals',v:350,c:'#b45309'},{n:'Energy & Chemicals',v:200,c:'#c2410c'},{n:'Food',v:110,c:'#4d7c0f'},{n:'ICT & Finance',v:80,c:'#1d4ed8'},{n:'Machinery',v:85,c:'#6d28d9'},{n:'Textile',v:55,c:'#0f766e'},{n:'The 8th (FamilyMart)',v:40,c:'#059669'},{n:'Others',v:10,c:'#9a3412'}],
+      2023:[{n:'Metals & Minerals',v:280,c:'#b45309'},{n:'Energy & Chemicals',v:175,c:'#c2410c'},{n:'Food',v:115,c:'#4d7c0f'},{n:'ICT & Finance',v:90,c:'#1d4ed8'},{n:'Machinery',v:95,c:'#6d28d9'},{n:'Textile',v:60,c:'#0f766e'},{n:'The 8th (FamilyMart)',v:50,c:'#059669'},{n:'Others',v:10,c:'#9a3412'}],
+      2024:[{n:'Metals & Minerals',v:245,c:'#b45309'},{n:'Energy & Chemicals',v:160,c:'#c2410c'},{n:'Food',v:120,c:'#4d7c0f'},{n:'ICT & Finance',v:95,c:'#1d4ed8'},{n:'Machinery',v:100,c:'#6d28d9'},{n:'Textile',v:62,c:'#0f766e'},{n:'The 8th (FamilyMart)',v:55,c:'#059669'},{n:'Others',v:15,c:'#9a3412'}],
+      2025:[{n:'Metals & Minerals',v:178,c:'#b45309'},{n:'Energy & Chemicals',v:155,c:'#c2410c'},{n:'Food',v:130,c:'#4d7c0f'},{n:'ICT & Finance',v:108,c:'#1d4ed8'},{n:'Machinery',v:137,c:'#6d28d9'},{n:'Textile',v:74,c:'#0f766e'},{n:'The 8th (FamilyMart)',v:60,c:'#059669'},{n:'Others',v:12,c:'#9a3412'}]
+    }
+  }
+};
+
+let currentCo = 'mc';
+function getCo() { return companies[currentCo]; }
+function getSegData() { return getCo().segData; }
+
+// ===== CHART REGISTRY =====
+const chartReg = {};
+function destroyAll() {
+  Object.values(chartReg).forEach(c => { try { c.destroy(); } catch(e) {} });
+  Object.keys(chartReg).forEach(k => delete chartReg[k]);
+}
+function mkChart(id, type, labels, datasets, opts) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (chartReg[id]) { try { chartReg[id].destroy(); } catch(e) {} }
+  const defaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#6b7a99', font: { family: 'IBM Plex Mono', size: 10 } } },
+      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#6b7a99', font: { family: 'IBM Plex Mono', size: 10 } } }
+    }
+  };
+  chartReg[id] = new Chart(el, { type, data: { labels, datasets }, options: Object.assign({...defaults}, opts||{}) });
+  return chartReg[id];
+}
+
+// ===== SEG BARS RENDER =====
+let segPieChart = null;
+function renderSegBars(yr) {
+  const data = getSegData()[yr];
+  if (!data) return;
+  const sorted = [...data].sort((a,b) => b.v - a.v);
+  const maxV = Math.max(...sorted.map(d => Math.abs(d.v)));
+  const totalPos = sorted.filter(d => d.v > 0).reduce((s,d) => s+d.v, 0);
+  const el = document.getElementById('seg-bars');
+  if (el) {
+    el.innerHTML = sorted.map(d => {
+      const usd = (d.v/150).toFixed(1);
+      const pct = d.v > 0 ? ((d.v/totalPos)*100).toFixed(1) : '';
+      const col = d.v < 0 ? '#dc2626' : d.c;
+      const label = d.v > 0 ? `$${usd}B` : `($${Math.abs(usd)}B)`;
+      return `<div class="seg-row">
+        <span class="seg-name">${d.n}</span>
+        <div class="seg-track"><div class="seg-fill" style="width:${Math.max(0,(d.v/maxV)*100).toFixed(1)}%;background:${col}">${d.v>0?label:''}</div></div>
+        <span class="seg-val" style="color:${col};width:62px">${label}</span>
+        <span style="width:44px;text-align:right;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:${d.v>0?'#b45309':'#6b7a99'};font-weight:600">${pct?pct+'%':''}</span>
+      </div>`;
+    }).join('');
+  }
+  // Pie
+  const pos = sorted.filter(d => d.v > 0);
+  if (segPieChart) { try { segPieChart.destroy(); } catch(e) {} segPieChart = null; }
+  const pieEl = document.getElementById('seg-pie');
+  if (pieEl) {
+    segPieChart = new Chart(pieEl, {
+      type: 'doughnut',
+      data: { labels: pos.map(d=>d.n), datasets: [{ data: pos.map(d=>d.v), backgroundColor: pos.map(d=>d.c), borderWidth:1, borderColor:'#fff' }] },
+      options: { responsive:true, maintainAspectRatio:false, layout:{ padding:4 }, plugins:{ legend:{ display:true, position:'right', labels:{ color:'#6b7a99', font:{ size:10, family:'IBM Plex Mono' }, boxWidth:10, padding:8, generateLabels: function(chart){ return chart.data.labels.map(function(l,i){ return { text:l, fillStyle:chart.data.datasets[0].backgroundColor[i], strokeStyle:'transparent', lineWidth:0, hidden:false, index:i }; }); } } }, tooltip:{ callbacks:{ label: function(ctx){ return ' ' + ctx.label; } } }, datalabels:{ display:false } } }
+    });
+  }
+}
+
+function renderOverviewSeg() {
+  const data = getSegData()[2025];
+  if (!data) return;
+  const sorted = [...data].sort((a,b) => b.v - a.v);
+  const maxV = Math.max(...sorted.map(d => Math.abs(d.v)));
+  const totalPos = sorted.filter(d => d.v > 0).reduce((s,d) => s+d.v, 0);
+  const el = document.getElementById('seg-overview');
+  if (!el) return;
+  el.innerHTML = sorted.map(d => {
+    const usd = (d.v/150).toFixed(1);
+    const pct = d.v > 0 ? ((d.v/totalPos)*100).toFixed(1) : '';
+    const col = d.v < 0 ? '#dc2626' : d.c;
+    const label = d.v > 0 ? `$${usd}B` : `($${Math.abs(usd)}B)`;
+    return `<div class="seg-row">
+      <span class="seg-name" style="font-size:10.5px;width:180px">${d.n}</span>
+      <div class="seg-track"><div class="seg-fill" style="width:${Math.max(0,(d.v/maxV)*100).toFixed(1)}%;background:${col};font-size:9.5px">${d.v>0?label:''}</div></div>
+      <span class="seg-val" style="color:${col};font-size:10.5px;width:62px">${label}</span>
+      <span style="width:44px;text-align:right;font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:${d.v>0?'#b45309':'#6b7a99'};font-weight:600">${pct?pct+'%':''}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== PROFILE DATA =====
+const profileData = {
+  mc: {
+    info: [
+      ['Tam Adı','三菱商事株式会社 · Mitsubishi Corporation'],
+      ['Borsa Kodu','TYO: 8058 · LSE: MBC · Nikkei 225 & TOPIX Core30'],
+      ['Kuruluş','1918 (şirketleşme) · 1954 (yeniden kuruluş) · Tokyo'],
+      ['CEO','Katsuya Nakanishi (Başkan & CEO)'],
+      ['Sektör','Sogo Shosha (Genel Ticaret Şirketi)'],
+      ['Fortune Global 500','#65 (2024)'],
+      ['Piyasa Değeri','~$65-70B USD (2025)'],
+      ['Konsolide Çalışan','62,062 (Mart 2025)'],
+    ],
+    shareholders: [
+      ['Master Trust Bank (TR)','15.21%','hl'],['Berkshire Hathaway','9.61%','gn'],
+      ['Custody Bank of Japan','5.37%',''],['Meiji Yasuda Life','4.09%',''],
+      ['Tokio Marine','2.32%',''],['JPMorgan Chase','1.34%',''],
+    ],
+    shareholderNote: 'Berkshire Hathaway 2020\'den bu yana tüm büyük Japon sogo shoshalarına yatırım yapmaktadır.',
+    calik: [
+      ['Enerji (LNG/Doğal Gaz)','★★★★★ Çok yüksek','green'],
+      ['Yenilenebilir Enerji','★★★★☆ Güçlü örtüşme','green'],
+      ['Madencilik / Doğal Kaynaklar','★★★★☆ Mineral Resources segmenti','accent'],
+      ['Altyapı / Proje Finansmanı','★★★☆☆ Urban Dev & Infra','accent'],
+      ['Tekstil & Giyim','★★★☆☆ Smart-Life Creation','gold'],
+      ['Gıda & Tarım','★★☆☆☆ Food Industry','gold'],
+    ],
+    subsidiaries: [
+      ['Lawson, Inc.','Japonya\'nın 2. büyük CVS zinciri (%50)'],
+      ['Mitsubishi Motors Corp.','Otomotiv — özkaynak yöntemi'],
+      ['Mitsubishi Shokuhin','Gıda dağıtım (%62)'],
+      ['Australia Steelmaking Coal','Demir kömür madenleri'],
+      ['Malaysia LNG (MLNG)','LNG üretim ortaklığı'],
+      ['Chiyoda Corporation','LNG mühendislik — maliyet riski'],
+    ]
+  },
+  hitachi: {
+    info: [
+      ['Tam Adı','株式会社日立製作所 · Hitachi, Ltd.'],
+      ['Borsa Kodu','TYO: 6501 · Nikkei 225 & TOPIX Core30'],
+      ['Kuruluş','1910 · Ibaraki, Japonya'],
+      ['CEO','Keiji Kojima (Başkan & CEO, FY2024 itibarıyla)'],
+      ['Sektör','Teknoloji Konglomerası / Sosyal İnovasyon'],
+      ['Fortune Global 500','~#170 (2024)'],
+      ['Piyasa Değeri','~$100B+ USD (2025)'],
+      ['Konsolide Çalışan','282,743 (Mart 2025)'],
+    ],
+    shareholders: [
+      ['Master Trust Bank (TR)','~15%','hl'],['Custody Bank of Japan','~10%',''],
+      ['BlackRock','~5%',''],['Vanguard','~3%',''],
+      ['State Street','~2%',''],['JPMorgan','~2%',''],
+    ],
+    shareholderNote: 'Hitachi Astemo (otomotiv elektroniği) 2021\'de Hitachi\'nin bağlı ortaklığından özkaynak yöntemi iştirakine dönüştürüldü.',
+    calik: [
+      ['Enerji (Hitachi Energy)','★★★★★ HVDC, güç iletimi, şebeke','green'],
+      ['Dijital Dönüşüm (Lumada)','★★★★☆ Endüstriyel DX platformu','green'],
+      ['Raylı Sistemler','★★★★☆ Sinyal, rolling stock','accent'],
+      ['Nükleer Enerji','★★★☆☆ Reaktör teknolojisi','accent'],
+      ['Su & Çevre Teknolojisi','★★★☆☆ Sürdürülebilir altyapı','gold'],
+      ['Sağlık Teknolojisi','★★☆☆☆ Tıbbi cihazlar','gold'],
+    ],
+    subsidiaries: [
+      ['Hitachi Energy','HVDC, transformatörler, güç şebekesi'],
+      ['GlobalLogic','DX yazılım & mühendislik (~$9.6B alım)'],
+      ['Thales GTS','Demiryolu sinyal sistemleri (~€1.66B alım)'],
+      ['Hitachi Vantara','Kurumsal depolama & veri'],
+      ['Hitachi Astemo','Otomotiv bileşenleri (özkaynak yöntemi)'],
+      ['Hitachi High-Tech','Sağlık & yarı iletken ekipmanı'],
+    ]
+  },
+  itochu: {
+    info: [
+      ['Tam Adı','伊藤忠商事株式会社 · ITOCHU Corporation'],
+      ['Borsa Kodu','TYO: 8001 · Nikkei 225 & TOPIX Core30'],
+      ['Kuruluş','1858 · Osaka/Tokyo, Japonya'],
+      ['CEO','Keita Ishii (Başkan & CEO)'],
+      ['Sektör','Sogo Shosha (Genel Ticaret Şirketi)'],
+      ['Fortune Global 500','~#50 (2024)'],
+      ['Piyasa Değeri','~$65B USD (2025)'],
+      ['Konsolide Çalışan','115,089 (Mart 2025)'],
+    ],
+    shareholders: [
+      ['Master Trust Bank (TR)','~15%','hl'],['Marubeni Corporation','~3%',''],
+      ['Meiji Yasuda Life','~3%',''],['Berkshire Hathaway','~9%','gn'],
+      ['BlackRock','~5%',''],['Custody Bank of Japan','~8%',''],
+    ],
+    shareholderNote: 'Itochu, Japon sogo shosha\'larından downstream (tüketici) segmentlerine en fazla odaklanan şirkettir. FamilyMart\'ın tam sahibidir.',
+    calik: [
+      ['Tekstil & Moda','★★★★★ En güçlü alan (kurucu sektör)','green'],
+      ['Gıda & Tarım Zinciri','★★★★☆ FamilyMart + upstream tarım','green'],
+      ['Enerji Geçişi','★★★★☆ LNG + yenilenebilir','accent'],
+      ['Madencilik','★★★☆☆ Metals & Minerals segmenti','accent'],
+      ['Fintech & Dijital','★★★☆☆ ICT & Finance segmenti','gold'],
+      ['Makine & Altyapı','★★★☆☆ Machinery segmenti','gold'],
+    ],
+    subsidiaries: [
+      ['FamilyMart','Japonya\'nın 2. büyük CVS (tam sahiplik)'],
+      ['CITIC Ltd.','Çin konglomeratı — stratejik hisse'],
+      ['CP Group (Tailand)','ASEAN gıda ve perakende'],
+      ['Dole Food Company','Global meyve & tarım'],
+      ['Drummond Energy','ABD kömür & enerji'],
+      ['Prima Meat Packers','Gıda işleme, Japonya'],
+    ]
+  }
+};
+
+const leverageData = {
+  mc: [
+    ['Toplam Fin. Borç','$30.1B','$32.1B','$33.4B','$32.5B','$27.9B','gn'],
+    ['Net Borç','$20.3B','$22.3B','$22.4B','$23.1B','$17.3B','gn'],
+    ['Ana Ortak Özkaynağı','$40.8B','$48.4B','$59.5B','$62.6B','$61.5B','hl'],
+    ['Net Borç/Özkaynak','0.50x','0.47x','0.42x','0.38x','0.28x','gn'],
+    ['Net Borç/FAVÖK','1.8x','1.2x','1.3x','1.4x','1.2x','gd'],
+    ['Özkaynak Oranı','30.1%','31.6%','33.7%','38.6%','43.6%','gn'],
+    ['İşletme Nakit Akışı','$7.2B','$8.8B','$7.5B','$9.4B','$11.1B','gn'],
+    ['Hisse Geri Alım','$0.5B','$1.6B','$1.4B','$2.9B','$4.0B','rd'],
+  ],
+  hitachi: [
+    ['Fin. Borç','$7.2B','$7.8B','$7.5B','$7.7B','$8.1B',''],
+    ['Net Borç (IBD-cash)','$22.4B','$12.1B','$3.6B','$2.4B','$2.3B','gn'],
+    ['Özkaynak (Ana Ort.)','$28.4B','$34.5B','$38.0B','$39.0B','$39.1B','hl'],
+    ['D/E Oranı (incl.NC)','0.58x','0.41x','0.20x','0.20x','0.20x','gn'],
+    ['Özkaynak Oranı (Ana Ort.)','31%','40%','47%','47%','44%','gn'],
+    ['İşletme Nakit Akışı','$4.2B','$5.8B','$6.0B','$6.4B','$7.8B','gn'],
+    ['Adj. EBITA Marjı','7.4%','8.6%','10.1%','10.6%','11.7%','gn'],
+  ],
+  itochu: [
+    ['Net IBD','$24.5B','$20.3B','$17.7B','$19.0B','$19.4B','rd'],
+    ['Toplam Özkaynak','$22.1B','$31.3B','$36.2B','$36.0B','$38.5B','hl'],
+    ['Net IBD/Özkaynak','0.78x','0.54x','0.50x','0.51x','0.51x','gd'],
+    ['Özkaynak Oranı','29.7%','34.6%','36.8%','37.5%','38.0%','gn'],
+    ['İşletme Nakit Akışı','$5.9B','$6.0B','$6.9B','$6.8B','$6.7B','gn'],
+    ['ROA','3.6%','7.0%','6.3%','5.8%','5.9%','gn'],
+    ['Faiz Karşılama (x)','13.2x','23.6x','12.3x','8.3x','7.8x','gd'],
+  ]
+};
+
+function renderLeverageTable() {
+  const rows = leverageData[currentCo];
+  const el = document.getElementById('leverage-table-container');
+  if (el && rows) {
+    el.innerHTML = `<table class="ft">
+      <thead><tr><th>Kalem</th><th>FY2021</th><th>FY2022</th><th>FY2023</th><th>FY2024</th><th>FY2025</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td>${r[0]}</td>${[r[1],r[2],r[3],r[4],r[5]].map((v,i)=>`<td class="${i===4?r[6]:''}">${v}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }
+  // Update leverage strip cards per company
+  const co = getCo();
+  const nd = co.netDebt[4];
+  const set = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+  set('lev-netdebt-val', `$${nd}B`);
+  set('lev-netdebt-sub', 'FY2025 Net Borç');
+  set('lev-netdebt-delta', co.kpi.leverage + ' borç/EBITDA');
+  set('lev-ratio-val', co.kpi.leverage);
+  set('lev-ratio-sub', co.kpi.leverageSub);
+  set('lev-ratio-delta', co.kpi.leverageDelta);
+  // Hide ratio strip entirely for Hitachi (net cash position)
+  const ratioStrip = document.querySelector('.strip-item.strip-gold');
+  if (ratioStrip) ratioStrip.style.opacity = (currentCo === 'hitachi') ? '0.45' : '1';
+  set('lev-eq-val', co.netMargin[4] + '% net marj');
+  set('lev-eq-sub', 'FY2025 net kâr marjı');
+  set('lev-eq-delta', '▲ 5 yıllık trend');
+  set('lev-ocf-val', '$' + (co.ebitda[4]) + 'B');
+  set('lev-ocf-sub', 'EBITDA FY2025');
+  set('lev-ocf-delta', '▲ ' + co.kpi.opkarDelta);
+  set('lev-extra-val', co.kpi.roe);
+  set('lev-extra-label', 'ROE (FY2025)');
+  set('lev-extra-sub', co.kpi.roeSub);
+  set('lev-extra-delta', co.kpi.roeDelta);
+}
+
+function renderProfile() {
+  const p = profileData[currentCo];
+  const el = document.getElementById('profile-container');
+  if (!el || !p) return;
+  const colorMap = {green:'var(--green)',accent:'var(--accent)',gold:'var(--gold)'};
+  el.innerHTML = `
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="card" style="grid-column:span 2">
+      <div class="card-title">Şirket Genel Bilgileri</div>
+      <div class="card-sub">${getCo().name}</div>
+      <table class="ft"><tbody>
+        ${p.info.map(([k,v])=>`<tr><td>${k}</td><td style="text-align:left">${v}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Büyük Hissedarlar</div>
+      <div class="card-sub">2024-2025 itibarıyla</div>
+      <table class="ft"><tbody>
+        ${p.shareholders.map(([k,v,cls])=>`<tr><td>${k}</td><td class="${cls}">${v}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="footnote" style="margin-top:10px">${p.shareholderNote}</div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Çalık Holding Perspektifinden İş Potansiyeli</div>
+      <div class="card-sub">Sektörel örtüşme değerlendirmesi</div>
+      <table class="ft"><tbody>
+        ${p.calik.map(([k,v,col])=>`<tr><td>${k}</td><td style="text-align:left;color:${colorMap[col]};font-family:'DM Sans',sans-serif">${v}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Önemli İştirak & Bağlı Şirketler</div>
+      <div class="card-sub">Seçilmiş stratejik varlıklar</div>
+      <table class="ft"><tbody>
+        ${p.subsidiaries.map(([k,v])=>`<tr><td>${k}</td><td style="text-align:left;font-family:'DM Sans',sans-serif;color:var(--muted)">${v}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+// ===== FINANCIAL TABLES =====
+const finTables = {
+  mc: {
+    sub: 'FY: Nisan–Mart · Kur: @108/114/133/143/150 ¥/$',
+    income: [
+      {r:'Ciro',v:['$121.4B','$192.0B','$159.3B','$135.4B','$122.2B'],last:'hl'},
+      {r:'Net Kâr (Ana Ortaklar)',v:['$5.4B','$8.4B','$8.7B','$6.7B','$6.2B'],last:'gn'},
+      {r:'EBITDA (tahmini)*',v:['$6.3B','$14.2B','$14.4B','$11.4B','$11.5B'],last:'gd'},
+      {r:'Net Kâr Marjı',v:['4.6%','4.9%','4.7%','4.9%','5.1%'],last:'hl'},
+      {r:'ROE',v:['10.2%','15.8%','14.8%','11.3%','10.3%'],last:'gn'},
+    ],
+    balance: [
+      {r:'Toplam Aktif',v:['—','$154.0B','$165.5B','$163.7B','$143.3B'],last:'hl'},
+      {r:'Ana Ortak Özkaynağı',v:['—','$48.6B','$55.8B','$63.2B','$62.5B'],last:'gn'},
+      {r:'Net Borç',v:['—','$22.3B','$22.4B','$23.1B','$17.3B'],last:'gd'},
+      {r:'Net Borç/FAVÖK',v:['—','1.2x','1.3x','1.4x','1.2x'],last:'gd'},
+    ]
+  },
+  hitachi: {
+    sub: 'FY: Nisan–Mart · Kur: @108/114/133/143/150 ¥/$',
+    income: [
+      {r:'Ciro',v:['$95.0B','$95.4B','$73.1B','$68.4B','$65.2B'],last:'hl'},
+      {r:'Net Kâr (Ana Ortaklar)',v:['$5.4B','$5.7B','$4.4B','$4.3B','$4.1B'],last:'gn'},
+      {r:'EBITDA',v:['$12.9B','$12.0B','$9.9B','$9.9B','$9.4B'],last:'gd'},
+      {r:'Net Kâr Marjı',v:['4.3%','4.7%','5.5%','5.9%','6.3%'],last:'hl'},
+      {r:'ROE',v:['~7%','~9%','~10%','9.8%','10.5%'],last:'gn'},
+    ],
+    balance: [
+      {r:'Toplam Aktif',v:['—','$73.1B','$81.0B','$84.6B','$88.6B'],last:'hl'},
+      {r:'Özkaynak (Ana Ort.)',v:['—','$43.4B','$42.9B','$40.9B','$39.0B'],last:'gn'},
+      {r:'Fin. Borç (IBD)',v:['—','$19.4B','$8.9B','$8.4B','$8.0B'],last:''},
+      {r:'Net Borç/EBITDA',v:['~1.7x','~1.0x','~0.4x','~0.2x','~0.2x'],last:'gn'},
+    ]
+  },
+  itochu: {
+    sub: 'FY: Nisan–Mart · Kur: @106/112/135/145/152 ¥/$',
+    income: [
+      {r:'Ciro',v:['$97.7B','$109.4B','$103.0B','$97.1B','$96.6B'],last:'hl'},
+      {r:'Net Kâr (Ana Ortaklar)',v:['$3.8B','$7.3B','$5.9B','$5.6B','$5.8B'],last:'gn'},
+      {r:'EBITDA (tahmini)*',v:['$4.2B','$7.5B','$8.0B','$7.8B','$8.1B'],last:'gd'},
+      {r:'Net Kâr Marjı',v:['3.9%','5.9%','5.7%','5.7%','6.0%'],last:'hl'},
+      {r:'ROE',v:['12.7%','21.8%','17.7%','15.6%','15.7%'],last:'gn'},
+    ],
+    balance: [
+      {r:'Toplam Aktif',v:['—','$81.1B','$98.3B','$95.9B','$101.2B'],last:'hl'},
+      {r:'Özkaynak (Ana Ort.)',v:['—','$31.3B','$36.2B','$36.0B','$38.5B'],last:'gn'},
+      {r:'Net IBD',v:['—','$20.3B','$17.7B','$19.0B','$19.4B'],last:'rd'},
+      {r:'Net IBD/Özkaynak',v:['—','0.54x','0.50x','0.51x','0.51x'],last:'gd'},
+    ]
+  }
+};
+
+function renderFinancials() {
+  const key = currentCo;
+  const ft = finTables[key];
+  if (!ft) return;
+  // Income table
+  const tc = document.getElementById('fin-table-container');
+  if (tc) {
+    const sub = document.getElementById('fin-table-sub');
+    if (sub) sub.textContent = ft.sub;
+    tc.innerHTML = `<table class="ft">
+      <thead><tr><th>Kalem</th><th>FY2021</th><th>FY2022</th><th>FY2023</th><th>FY2024</th><th>FY2025</th></tr></thead>
+      <tbody>${ft.income.map(row=>`<tr><td>${row.r}</td>${row.v.map((v,i)=>`<td class="${i===4?row.last:''}">${v}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }
+  // Balance + ratios
+  const bc = document.getElementById('fin-balance-container');
+  if (bc) {
+    bc.innerHTML = `<table class="ft">
+      <thead><tr><th>Kalem</th><th>FY2021</th><th>FY2022</th><th>FY2023</th><th>FY2024</th><th>FY2025</th></tr></thead>
+      <tbody>${ft.balance.map(row=>`<tr><td>${row.r}</td>${row.v.map((v,i)=>`<td class="${i===3?row.last:''}">${v}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }
+  // Ratios container — reuse as trend data
+  const rc = document.getElementById('fin-ratios-container');
+  if (rc) {
+    const co = getCo();
+    rc.innerHTML = `<table class="ft">
+      <thead><tr><th>Kalem</th><th>FY2021</th><th>FY2022</th><th>FY2023</th><th>FY2024</th><th>FY2025</th></tr></thead>
+      <tbody>
+        <tr><td>Ciro ($B)</td>${co.revenue.map((v,i)=>`<td class="${i===4?'hl':''}">${v}</td>`).join('')}</tr>
+        <tr><td>Net Kâr ($B)</td>${co.netProfit.map((v,i)=>`<td class="${i===4?'gn':''}">${v}</td>`).join('')}</tr>
+        <tr><td>Net Marj (%)</td>${co.netMargin.map((v,i)=>`<td class="${i===4?'hl':''}">${v}%</td>`).join('')}</tr>
+        <tr><td>ROE (%)</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="gn">${getCo().kpi.roe}</td></tr>
+        <tr><td>Net Borç ($B)</td>${co.netDebt.map((v,i)=>`<td class="${i===4?'gd':''}">${v}</td>`).join('')}</tr>
+      </tbody>
+    </table>`;
+  }
+}
+
+// ===== RENDER ALL CHARTS =====
+function renderAllCharts() {
+  const co = getCo();
+  destroyAll();
+  // Revenue bar
+  mkChart('rev-chart','bar',years,[
+    { label:'Ciro', data:co.revenue, backgroundColor:'rgba(29,78,216,0.75)', borderRadius:4 }
+  ]);
+  // Profit line
+  mkChart('profit-chart','line',years,[
+    { label:'Net Kâr', data:co.netProfit, borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.08)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#059669' },
+    { label:'EBITDA', data:co.ebitda, borderColor:'#b45309', tension:0.4, fill:false, pointRadius:4, pointBackgroundColor:'#b45309', borderDash:[5,3] }
+  ],{ plugins:{ legend:{ display:true, labels:{ color:'#6b7a99', font:{ size:10 }, boxWidth:12 } } } });
+  // Employees
+  mkChart('emp-chart','line',years,[
+    { label:'Çalışan', data:co.employees, borderColor:'#6d28d9', backgroundColor:'rgba(109,40,217,0.08)', tension:0.3, fill:true, pointRadius:4 }
+  ]);
+  // Margins
+  mkChart('margin-chart','line',years,[
+    { label:'Brüt Marj%', data:co.grossMargin, borderColor:'#1d4ed8', tension:0.3, pointRadius:4 },
+    { label:'Net Marj%', data:co.netMargin, borderColor:'#059669', tension:0.3, pointRadius:4 }
+  ],{ plugins:{ legend:{ display:true, labels:{ color:'#6b7a99', font:{ size:10 }, boxWidth:12 } } } });
+  // Debt bar
+  const fy4 = ['FY2022','FY2023','FY2024','FY2025'];
+  const dv = co.netDebt.slice(1);
+  const dc = dv.map((v,i) => i===3 && v < dv[2] ? '#059669' : '#1d4ed8');
+  mkChart('debt-chart','bar',fy4,[
+    { label:'Net Borç', data:dv, backgroundColor:dc, borderRadius:4 }
+  ]);
+  // Capital pie
+  const cp = co.capPie;
+  const cpEl = document.getElementById('capital-pie');
+  if (cpEl) {
+    chartReg['capital-pie'] = new Chart(cpEl, {
+      type:'doughnut',
+      data:{ labels:cp.labels, datasets:[{ data:cp.data, backgroundColor:['#1d4ed8','#6d28d9','#dc2626','#94a3b8'], borderWidth:1, borderColor:'#fff' }] },
+      options:{ responsive:true, maintainAspectRatio:false, layout:{ padding:4 }, plugins:{ legend:{ display:true, position:'right', labels:{ color:'#6b7a99', font:{ size:10 }, boxWidth:10, generateLabels: function(chart){ return chart.data.labels.map(function(l,i){ return { text:l, fillStyle:chart.data.datasets[0].backgroundColor[i], strokeStyle:'transparent', lineWidth:0, hidden:false, index:i }; }); } } }, tooltip:{ callbacks:{ label: function(ctx){ return ' ' + ctx.label; } } }, datalabels:{ display:false } } }
+    });
+  }
+  // Seg trend
+  const segD = getSegData();
+  const fys = [2021,2022,2023,2024,2025];
+  const allSegs = [...new Set(fys.flatMap(y => (segD[y]||[]).map(d=>d.n)))];
+  const segColors = {};
+  fys.forEach(y => (segD[y]||[]).forEach(d => { segColors[d.n] = d.c; }));
+  const stEl = document.getElementById('seg-trend');
+  if (stEl) {
+    chartReg['seg-trend'] = new Chart(stEl, {
+      type:'line',
+      data:{ labels:years, datasets: allSegs.map(n => ({
+        label: n.length>20 ? n.substring(0,19)+'…' : n,
+        data: fys.map(y => { const f=(segD[y]||[]).find(s=>s.n===n); return f?f.v:null; }),
+        borderColor: segColors[n]||'#94a3b8', backgroundColor:'transparent',
+        tension:0.3, pointRadius:3, borderWidth:2, spanGaps:true
+      })) },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'right', labels:{ color:'#6b7a99', font:{ size:10, family:'IBM Plex Mono' }, boxWidth:10, padding:6 } } },
+        scales:{ x:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ color:'#6b7a99', font:{ size:10 } } }, y:{ grid:{ color:'rgba(0,0,0,0.05)' }, ticks:{ color:'#6b7a99', font:{ size:10 } } } }
+      }
+    });
+  }
+}
+
+// ===== KPI UPDATER =====
+function updateKPI() {
+  const k = getCo().kpi;
+  const qs = (sel, prop, val) => { const el=document.querySelector(sel); if(el) el[prop]=val; };
+  qs('.strip-item.strip-blue .strip-val','textContent',k.ciro);
+  qs('.strip-item.strip-blue .strip-sub','textContent',k.ciroSub);
+  const cd=document.querySelector('.strip-item.strip-blue .strip-delta'); if(cd){cd.textContent=k.ciroDelta;cd.className='strip-delta '+k.ciroDir;}
+  qs('.strip-item.strip-green .strip-val','textContent',k.netkar);
+  qs('.strip-item.strip-green .strip-sub','textContent',k.netkarSub);
+  const nd=document.querySelector('.strip-item.strip-green .strip-delta'); if(nd){nd.textContent=k.netkarDelta;nd.className='strip-delta '+k.netkarDir;}
+  qs('.strip-item.strip-gold .strip-val','textContent',k.opkar);
+  qs('.strip-item.strip-gold .strip-sub','textContent',k.opkarSub);
+  qs('.strip-item.strip-gold .strip-delta','textContent',k.opkarDelta);
+  // Update leverage ratio label per company
+  const levLabel = document.querySelector('.strip-item.strip-teal .strip-label');
+  if (levLabel) levLabel.textContent = (currentCo === 'mc') ? 'Net Borç / EBITDA' : (currentCo === 'hitachi') ? 'Net Borç / EBITDA' : 'Net Borç / Özkaynak';
+  // Also update leverage section ratio label
+  const ratioLabel = document.getElementById('lev-ratio-label');
+  if (ratioLabel) ratioLabel.textContent = (currentCo === 'mc') ? 'Net Borç / EBITDA' : (currentCo === 'hitachi') ? 'Net Nakit / EBITDA' : 'Net Borç / Özkaynak';
+  qs('.strip-item.strip-teal .strip-val','textContent',k.leverage);
+  qs('.strip-item.strip-teal .strip-sub','textContent',k.leverageSub);
+  qs('.strip-item.strip-teal .strip-delta','textContent',k.leverageDelta);
+  qs('.strip-item.strip-purple .strip-val','textContent',k.emp);
+  qs('.strip-item.strip-purple .strip-sub','textContent',k.empSub);
+  qs('.strip-item.strip-purple .strip-delta','textContent',k.empDelta);
+  qs('.strip-item.strip-red .strip-val','textContent',k.roe);
+  qs('.strip-item.strip-red .strip-sub','textContent',k.roeSub);
+  qs('.strip-item.strip-red .strip-delta','textContent',k.roeDelta);
+}
+
+// ===== COMPANY SWITCH =====
+function switchCompany(key, btn) {
+  currentCo = key;
+  document.querySelectorAll('.co-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('co-name').textContent = getCo().name;
+  document.getElementById('co-meta').textContent = getCo().meta;
+  updateKPI();
+  renderAllCharts();
+  renderOverviewSeg();
+  renderFinancials();
+  renderLeverageTable();
+  renderProfile();
+  // Re-render seg bars if segments tab is visible
+  if (!document.getElementById('tab-segments').classList.contains('hidden')) {
+    renderSegBars(2025);
+    document.querySelectorAll('#tab-segments .ypill').forEach(p=>p.classList.remove('active'));
+    document.querySelector('#tab-segments .ypill:last-child').classList.add('active');
+  }
+}
+
+// ===== TAB SWITCH =====
+function sw(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['overview','financials','segments','leverage','profile'].forEach(t => {
+    const d = document.getElementById('tab-'+t);
+    d.classList.add('hidden'); d.classList.remove('fade');
+  });
+  const target = document.getElementById('tab-'+name);
+  target.classList.remove('hidden');
+  setTimeout(() => target.classList.add('fade'), 10);
+  if (name === 'segments') {
+    setTimeout(() => {
+      renderSegBars(2025);
+      document.querySelectorAll('#tab-segments .ypill').forEach(p=>p.classList.remove('active'));
+      document.querySelector('#tab-segments .ypill:last-child').classList.add('active');
+    }, 80);
+  }
+}
+
+// ===== SEG YEAR SELECTOR =====
+function updateSegs(yr, btn) {
+  document.querySelectorAll('#tab-segments .ypill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('seg-year-label').textContent = `FY${yr} · Segment net kâr (USD)`;
+  renderSegBars(yr);
+}
+
+// ===== INIT =====
+window.onload = () => {
+  renderAllCharts();
+  renderOverviewSeg();
+  renderFinancials();
+  renderLeverageTable();
+  renderProfile();
+};
+</script>
